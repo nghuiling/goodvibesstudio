@@ -54,7 +54,6 @@ export default function Header() {
       <div className="flex-1 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">GoodVibes Studio</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Wonderful creations from Learning Friday participants!</p>
         </div>
         
         {user ? (
