@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     // Generate thumbnail URL using the Thumbnail.ws API
     const encodedUrl = encodeURIComponent(url);
-    const apiKey = 'ab1d3f5a5ec2cc0c'; // In production, store this in environment variables
+    const apiKey = process.env.THUMBNAIL_API_KEY
     const thumbnailUrl = `https://api.thumbnail.ws/api/${apiKey}/thumbnail/get?url=${encodedUrl}&width=800&refresh=true`;
     
     // Fetch the image and return it as a response
