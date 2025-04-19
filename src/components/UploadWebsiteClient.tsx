@@ -15,9 +15,20 @@ export default function UploadWebsiteClient() {
   const [error, setError] = useState('');
   const [customThumbnail, setCustomThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailBase64, setThumbnailBase64] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Function to convert File to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -27,25 +38,35 @@ export default function UploadWebsiteClient() {
       return;
     }
     
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image file is too large. Maximum size is 5MB.');
+    // Check file size (max 2MB - reduced to avoid Firebase size limits)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image file is too large. Maximum size is 2MB.');
       return;
     }
     
     setCustomThumbnail(file);
     
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setThumbnailPreview(previewUrl);
-    
-    // Clear any existing error
-    setError('');
+    try {
+      // Convert file to base64 for permanent storage
+      const base64String = await fileToBase64(file);
+      setThumbnailBase64(base64String);
+      
+      // Create preview URL for display only
+      const previewUrl = URL.createObjectURL(file);
+      setThumbnailPreview(previewUrl);
+      
+      // Clear any existing error
+      setError('');
+    } catch (err) {
+      console.error('Error processing image:', err);
+      setError('Failed to process the image. Please try a different one.');
+    }
   };
 
   const handleRemoveThumbnail = () => {
     setCustomThumbnail(null);
     setThumbnailPreview(null);
+    setThumbnailBase64(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -95,9 +116,9 @@ export default function UploadWebsiteClient() {
       // Handle thumbnail
       let thumbnailUrl;
       
-      // If a custom thumbnail was uploaded, use the preview URL directly
-      if (customThumbnail && thumbnailPreview) {
-        thumbnailUrl = thumbnailPreview;
+      // If a custom thumbnail was uploaded, use the base64 data
+      if (customThumbnail && thumbnailBase64) {
+        thumbnailUrl = thumbnailBase64;
       } else {
         // Use our own API endpoint to avoid CORS issues
         thumbnailUrl = `/api/thumbnail?url=${encodeURIComponent(formattedUrl)}`;
@@ -232,7 +253,7 @@ export default function UploadWebsiteClient() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
                         <p className="mb-1 text-sm text-gray-500">Click to upload custom thumbnail</p>
-                        <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
                       </div>
                       <input 
                         ref={fileInputRef}

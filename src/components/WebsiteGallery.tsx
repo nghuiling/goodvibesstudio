@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Website } from '@/lib/types';
 import { getWebsites, deleteWebsite, getUserProfile } from '@/lib/firebase/firebaseUtils';
 import { useAuth } from '@/lib/hooks/useAuth';
+import Image from 'next/image';
 
 export default function WebsiteGallery() {
   const [websites, setWebsites] = useState<Website[]>([]);
@@ -92,18 +93,39 @@ export default function WebsiteGallery() {
                   rel="noopener noreferrer"
                   className="block flex-grow"
                 >
-                  <div 
-                    className="h-36 bg-cover bg-center bg-no-repeat" 
-                    style={{ backgroundImage: `url(${website.thumbnailUrl})` }}
-                  >
-                    {website.description && (
-                      <div className="absolute inset-0 bg-rose-600 bg-opacity-80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                        <p className="text-white text-sm px-4 text-center max-w-[90%] line-clamp-3">
-                          {website.description}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  {website.thumbnailUrl.startsWith('data:image') ? (
+                    // Handle base64 image
+                    <div className="h-36 relative">
+                      <Image 
+                        src={website.thumbnailUrl} 
+                        alt={website.url}
+                        fill
+                        className="object-cover"
+                        unoptimized={true} // Necessary for base64 images
+                      />
+                      {website.description && (
+                        <div className="absolute inset-0 bg-rose-600 bg-opacity-80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                          <p className="text-white text-sm px-4 text-center max-w-[90%] line-clamp-3">
+                            {website.description}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Regular URL image (API or external)
+                    <div 
+                      className="h-36 bg-cover bg-center bg-no-repeat" 
+                      style={{ backgroundImage: `url(${website.thumbnailUrl})` }}
+                    >
+                      {website.description && (
+                        <div className="absolute inset-0 bg-rose-600 bg-opacity-80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                          <p className="text-white text-sm px-4 text-center max-w-[90%] line-clamp-3">
+                            {website.description}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="p-3">
                     <h3 className="text-sm font-medium text-gray-800 truncate mb-1">
