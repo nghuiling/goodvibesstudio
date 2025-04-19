@@ -4,18 +4,18 @@ import { getWebsites, deleteWebsite, getUserProfile } from '@/lib/firebase/fireb
 import { useAuth } from '@/lib/hooks/useAuth';
 import Image from 'next/image';
 
-// Accessible gradient combinations (light enough for black text)
+// Accessible gradient combinations (dark enough for white text)
 const GRADIENT_PAIRS = [
-  'from-yellow-200 to-pink-200',
-  'from-green-200 to-blue-200',
-  'from-indigo-200 to-purple-200',
-  'from-red-200 to-yellow-200',
-  'from-teal-200 to-lime-200',
-  'from-fuchsia-200 to-rose-200',
-  'from-sky-200 to-indigo-200',
-  'from-violet-200 to-fuchsia-200',
-  'from-amber-200 to-orange-200',
-  'from-emerald-200 to-teal-200',
+  'from-yellow-600 to-pink-600',
+  'from-green-600 to-blue-600',
+  'from-indigo-600 to-purple-600',
+  'from-red-600 to-yellow-600',
+  'from-teal-600 to-lime-600',
+  'from-fuchsia-600 to-rose-600',
+  'from-sky-600 to-indigo-600',
+  'from-violet-600 to-fuchsia-600',
+  'from-amber-600 to-orange-600',
+  'from-emerald-600 to-teal-600',
 ];
 
 // Function to get a deterministic gradient based on URL
@@ -128,7 +128,7 @@ export default function WebsiteGallery() {
   return (
     <div className="bg-gray-100 min-h-screen">
       {/* Website Grid */}
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-10 max-w-[1500px] mx-auto">
         {loading ? (
           <div className="text-center py-8">
             <p className="text-gray-600">Loading...</p>
@@ -140,11 +140,11 @@ export default function WebsiteGallery() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {websites.map((website) => (
               <div
                 key={website.id}
-                className="group relative bg-white rounded-md overflow-hidden shadow-sm flex flex-col"
+                className="group relative bg-white rounded-md overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.03] hover:-translate-y-1 transition-all duration-300 ease-in-out flex flex-col"
               >
                 <a
                   href={website.url}
@@ -163,10 +163,10 @@ export default function WebsiteGallery() {
                         unoptimized={true} // Necessary for base64 images
                       />
                       <div 
-                        className={`absolute inset-0 bg-gradient-to-br ${gradients[website.id]} opacity-0 group-hover:opacity-95 transition-opacity duration-300 flex items-center justify-center`}
+                        className={`absolute inset-0 bg-gradient-to-br ${gradients[website.id]} opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center`}
                       >
                         {website.description && (
-                          <p className="text-black font-medium text-sm px-4 text-center max-w-[90%] line-clamp-3">
+                          <p className="text-white font-medium text-sm px-4 text-center max-w-[90%] line-clamp-3">
                             {website.description}
                           </p>
                         )}
@@ -179,10 +179,10 @@ export default function WebsiteGallery() {
                       style={{ backgroundImage: `url(${website.thumbnailUrl})` }}
                     >
                       <div 
-                        className={`absolute inset-0 bg-gradient-to-br ${gradients[website.id]} opacity-0 group-hover:opacity-95 transition-opacity duration-300 flex items-center justify-center`}
+                        className={`absolute inset-0 bg-gradient-to-br ${gradients[website.id]} opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center`}
                       >
                         {website.description && (
-                          <p className="text-black font-medium text-sm px-4 text-center max-w-[90%] line-clamp-3">
+                          <p className="text-white font-medium text-sm px-4 text-center max-w-[90%] line-clamp-3">
                             {website.description}
                           </p>
                         )}
