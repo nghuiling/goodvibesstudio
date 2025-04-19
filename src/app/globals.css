@@ -31,3 +31,9 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Add better contrast for placeholder text */
+::placeholder {
+  color: #71717a !important; /* Zinc-500 for better contrast */
+  opacity: 1 !important; /* Firefox requires this */
+}
