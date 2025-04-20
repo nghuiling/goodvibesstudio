@@ -105,8 +105,8 @@ export default function UploadWebsiteClient() {
   };
   
   const verifyPassword = () => {
-    // Get the password from environment variable, with fallback for safety
-    const correctPassword = process.env.NEXT_PUBLIC_GUEST_PASSWORD || 'P@ssw0rd';
+    // Get the password from environment variable, no fallback for safety
+    const correctPassword = process.env.NEXT_PUBLIC_GUEST_PASSWORD;
     
     if (password === correctPassword) {
       setIsPasswordVerified(true);
