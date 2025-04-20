@@ -21,7 +21,8 @@ export default function UploadWebsiteClient() {
   const [password, setPassword] = useState('');
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [showPasswordScreen, setShowPasswordScreen] = useState(false);
-  const [showUploadChoice, setShowUploadChoice] = useState(!user && !isPasswordVerified && !showPasswordScreen);
+  const [initialPasswordVerified, setInitialPasswordVerified] = useState(false);
+  const [showUploadChoice, setShowUploadChoice] = useState(false);
 
   // Auto-fill creator name with user's display name
   useEffect(() => {
@@ -45,10 +46,15 @@ export default function UploadWebsiteClient() {
     loadUserProfile();
   }, [user, createdBy]);
 
-  // Update the choice page visibility when user state changes
+  // Update the choice page visibility based on state
   useEffect(() => {
-    setShowUploadChoice(!user && !isPasswordVerified && !showPasswordScreen);
-  }, [user, isPasswordVerified, showPasswordScreen]);
+    // Only show the choice page if initial password is verified and user is not logged in
+    if (initialPasswordVerified && !user && !isPasswordVerified) {
+      setShowUploadChoice(true);
+    } else {
+      setShowUploadChoice(false);
+    }
+  }, [initialPasswordVerified, user, isPasswordVerified]);
 
   // Function to convert File to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -117,8 +123,30 @@ export default function UploadWebsiteClient() {
     }
   };
 
+  const verifyInitialPassword = () => {
+    // Get the password from environment variable, no fallback for safety
+    const correctPassword = process.env.NEXT_PUBLIC_GUEST_PASSWORD;
+    
+    if (password === correctPassword) {
+      setInitialPasswordVerified(true);
+      setError('');
+      // If user is logged in, skip the choice page
+      if (user) {
+        // Skip to upload form
+        setIsPasswordVerified(true);
+      } else {
+        // Show choice page for guest users
+        setShowUploadChoice(true);
+      }
+    } else {
+      setError('Incorrect password. Please try again.');
+    }
+  };
+
   const handleContinueAsGuest = () => {
-    setShowPasswordScreen(true);
+    // Skip password verification since users already entered the password once
+    // Set both flags to true to proceed directly to the upload form
+    setIsPasswordVerified(true);
     setShowUploadChoice(false);
   };
 
@@ -217,12 +245,13 @@ export default function UploadWebsiteClient() {
     );
   }
 
-  if (showPasswordScreen) {
+  // Initial password screen (shown first)
+  if (!initialPasswordVerified) {
     return (
       <div className="min-h-screen">
         <div className="flex-1 p-8">
           <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm p-8">
-            <h1 className="text-2xl font-medium text-gray-900 mb-6">Guest Access</h1>
+            <h1 className="text-2xl font-medium text-gray-900 mb-6">Access Verification</h1>
             
             {error && (
               <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-md border border-red-200">
@@ -231,25 +260,7 @@ export default function UploadWebsiteClient() {
             )}
             
             <div className="mb-6">
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-amber-800">Reminder</h3>
-                    <div className="mt-1 text-xs text-amber-700">
-                      <p>
-                        Guest uploads <strong>cannot be deleted or modified</strong> later.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <p className="text-gray-600 mb-4">Enter the password to access the upload page.</p>
+              <p className="text-gray-600 mb-4">Please enter the password to access the upload section.</p>
               
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -260,20 +271,20 @@ export default function UploadWebsiteClient() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-gray-800 mb-4"
-                placeholder="Enter the guest access password"
+                placeholder="Enter access password"
               />
               
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={handleBackToChoices}
+                  onClick={() => router.push('/')}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors"
                 >
-                  Go Back
+                  Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={verifyPassword}
+                  onClick={verifyInitialPassword}
                   className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition-colors"
                 >
                   Continue
@@ -323,10 +334,10 @@ export default function UploadWebsiteClient() {
                       </svg>
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-amber-800">Limitations</h3>
-                      <div className="mt-1 text-xs text-amber-700">
+                      <h3 className="text-sm font-medium text-amber-800">Important</h3>
+                      <div className="mt-1 text-sm text-amber-700">
                         <p>
-                          Guest uploads <strong>cannot be deleted or modified</strong> later.
+                          Guest uploads <strong>cannot be deleted or modified</strong> later. Clicking this button will take you directly to the upload form as a guest.
                         </p>
                       </div>
                     </div>
