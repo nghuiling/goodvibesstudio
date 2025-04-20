@@ -4,6 +4,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import {
   collection,
@@ -35,6 +37,63 @@ export const signInWithGoogle = async () => {
   } catch (error) {
     console.error("Error signing in with Google", error);
     throw error;
+  }
+};
+
+// Admin authentication
+export const signInWithEmailAndPassword = async (email: string, password: string) => {
+  try {
+    const userCredential = await firebaseSignInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Check if user has admin role
+    const userProfile = await getUserProfile(user.uid);
+    const isAdmin = userProfile?.isAdmin || false;
+    
+    return {
+      ...user,
+      isAdmin,
+    };
+  } catch (error) {
+    console.error("Error signing in with email/password", error);
+    throw error;
+  }
+};
+
+export const createAdminUser = async (email: string, password: string, displayName: string) => {
+  try {
+    // Create the user with email and password
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Update the user's display name
+    await updateProfile(user, { displayName });
+    
+    // Store the user in Firestore with admin role
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      email: user.email,
+      displayName,
+      photoURL: user.photoURL || '',
+      isAdmin: true,
+      createdAt: new Date().toISOString(),
+    });
+    
+    return user;
+  } catch (error) {
+    console.error("Error creating admin user", error);
+    throw error;
+  }
+};
+
+// Check if a user is an admin
+export const checkAdminStatus = async (userId: string) => {
+  try {
+    const userProfile = await getUserProfile(userId);
+    return userProfile?.isAdmin || false;
+  } catch (error) {
+    console.error("Error checking admin status", error);
+    return false;
   }
 };
 
@@ -107,6 +166,19 @@ export const deleteWebsite = async (websiteId: string) => {
   }
 };
 
+export const updateWebsite = async (websiteId: string, data: Partial<Website>) => {
+  try {
+    // Update the website document
+    const websiteRef = doc(db, 'websites', websiteId);
+    await updateDoc(websiteRef, data);
+    console.log('Website updated:', websiteId);
+    return true;
+  } catch (error) {
+    console.error('Error updating website:', error);
+    throw error;
+  }
+};
+
 // Add this new function to check for duplicate URLs
 export async function checkUrlExists(url: string): Promise<boolean> {
   const websitesRef = collection(db, 'websites');
@@ -127,15 +199,21 @@ export async function checkUrlExists(url: string): Promise<boolean> {
 }
 
 // User Profile Operations
-export const updateUserProfile = async (userId: string, data: { displayName: string }) => {
+export const updateUserProfile = async (userId: string, data: { displayName: string, isAdmin?: boolean }) => {
   try {
     // Update the user profile in Firestore
     const userRef = doc(db, 'users', userId);
     await setDoc(userRef, data, { merge: true });
     
     // Also update the auth display name if possible
-    if (auth.currentUser) {
+    if (auth.currentUser && data.displayName) {
       await updateProfile(auth.currentUser, { displayName: data.displayName });
+      
+      // Update the userName field in all websites created by this user
+      await updateUserWebsites(userId, data.displayName);
+      
+      // Update the createdBy field in all websites created by this user
+      await updateWebsitesCreatedBy(userId, data.displayName);
     }
     
     return data;
@@ -177,6 +255,28 @@ export const updateUserWebsites = async (userId: string, newDisplayName: string)
     return { success: true, updatedCount: querySnapshot.size };
   } catch (error) {
     console.error('Error updating user websites:', error);
+    throw error;
+  }
+};
+
+// Update the createdBy field for all websites created by a user
+export const updateWebsitesCreatedBy = async (userId: string, newDisplayName: string) => {
+  try {
+    const websitesRef = collection(db, 'websites');
+    const q = query(websitesRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    
+    console.log(`Updating createdBy field for ${querySnapshot.size} websites to: ${newDisplayName}`);
+    
+    const updatePromises = querySnapshot.docs.map(doc => 
+      updateDoc(doc.ref, { createdBy: newDisplayName })
+    );
+    
+    await Promise.all(updatePromises);
+    
+    return { success: true, updatedCount: querySnapshot.size };
+  } catch (error) {
+    console.error('Error updating websites createdBy field:', error);
     throw error;
   }
 };

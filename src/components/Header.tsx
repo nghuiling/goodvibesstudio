@@ -76,12 +76,12 @@ export default function Header() {
           </div>
         ) : (
           <div className="flex items-center gap-4">
-            <button
-              onClick={signInWithGoogle}
+            <Link
+              href="/upload"
               className="inline-flex items-center px-4 py-2 bg-rose-600 text-sm font-medium rounded-full text-white hover:bg-rose-700 transition-colors"
             >
-              Sign In
-            </button>
+              Upload Website
+            </Link>
           </div>
         )}
       </div>
